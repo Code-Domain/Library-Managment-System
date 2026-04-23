@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1a2e4a;--navy2:#243858;--navy3:#0f1e30;
+  --blue:#2563eb;--blue2:#3b82f6;--accent:#0ea5e9;
+  --red:#ef4444;--orange:#f97316;--yellow:#eab308;--green:#22c55e;--purple:#8b5cf6;
+  --bg:#f0f4f8;--card:#fff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;
+  --sb:90px;--sbw:240px;--top:60px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
+
+#sb{width:var(--sb);background:var(--navy3);height:100vh;position:fixed;left:0;top:0;z-index:300;display:flex;flex-direction:column;overflow:hidden;padding:0;transition:width .3s cubic-bezier(.4,0,.2,1);border-right:1px solid rgba(255,255,255,.06);cursor:pointer;}
+#sb.open{width:var(--sbw);cursor:default;}
+.sb-head{display:flex;align-items:center;gap:12px;padding:0 16px;height:var(--top);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.07);white-space:nowrap;overflow:hidden;}
+.sb-logo-icon{width:38px;height:38px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--blue));border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(14,165,233,.35);}
+.sb-logo-icon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.sb-logo-text{color:#fff;font-size:13px;font-weight:700;line-height:1.35;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none;letter-spacing:-.01em;}
+.sb-logo-text span{display:block;font-size:10.5px;font-weight:500;color:rgba(255,255,255,.45);margin-top:1px;letter-spacing:.02em;}
+#sb.open .sb-logo-text{opacity:1;}
+.sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0 12px 0;}
+.sb-nav::-webkit-scrollbar{width:3px;}
+.sb-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px;}
+.sb-section{padding:18px 18px 6px;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .2s;display:flex;align-items:center;gap:8px;}
+.sb-section::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
+#sb.open .sb-section{opacity:1;}
+.ni{display:flex;align-items:center;gap:12px;padding:9px 18px;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;border-left:3px solid transparent;white-space:nowrap;overflow:hidden;transition:background .15s,color .15s,border-color .15s;user-select:none;position:relative;margin:1px 0;}
+.ni:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.85);}
+.ni.active{background:rgba(14,165,233,.12);color:#fff;border-left-color:var(--accent);}
+.ni.active svg.ic{stroke:var(--accent);}
+.ni svg.ic{width:22px;height:22px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s;}
+.ni-label{opacity:0;transition:opacity .2s;pointer-events:none;flex:1;font-weight:500;}
+#sb.open .ni-label{opacity:1;}
+.ni-arr{font-size:11px;margin-left:auto;transition:transform .2s,opacity .2s;opacity:0;color:rgba(255,255,255,.3);font-weight:500;}
+#sb.open .ni-arr{opacity:1;}
+.ni-arr.open{transform:rotate(90deg);color:rgba(255,255,255,.6);}
+.nsub{display:none;background:rgba(0,0,0,.15);margin:0 0 2px 0;border-left:3px solid rgba(255,255,255,.04);}
+.nsub.open{display:block;}
+.nsub .ni{padding:8px 18px 8px 50px;font-size:12.5px;border-left:none;color:rgba(255,255,255,.4);margin:0;position:relative;}
+.nsub .ni::before{content:'';position:absolute;left:30px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.15);transition:background .15s,box-shadow .15s;flex-shrink:0;}
+.nsub .ni:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.85);}
+.nsub .ni:hover::before{background:rgba(255,255,255,.4);}
+.nsub .ni.active{background:rgba(14,165,233,.08);color:var(--accent);border-left:none;}
+.nsub .ni.active::before{background:var(--accent);box-shadow:0 0 6px rgba(14,165,233,.5);}
+.nsub .ni svg.ic{width:18px;height:18px;stroke-width:1.6;}
+.sb-close{display:none;position:absolute;top:16px;right:12px;background:rgba(255,255,255,.08);border:none;cursor:pointer;color:rgba(255,255,255,.5);width:30px;height:30px;border-radius:8px;align-items:center;justify-content:center;z-index:10;transition:background .15s,color .15s;}
+.sb-close:hover{background:rgba(255,255,255,.15);color:#fff;}
+.sb-close svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+
+#ov{display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);}
+#ov.show{display:block;}
+
+#main{margin-left:var(--sb);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:margin-left .3s cubic-bezier(.4,0,.2,1);}
+
+.topbar{height:var(--top);background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:10px;flex-shrink:0;position:sticky;top:0;z-index:200;}
+.tb-title{font-size:15px;font-weight:700;color:var(--navy);}
+.tb-gap{flex:1;}
+.tb-search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:7px 13px;width:220px;}
+.tb-search input{border:none;outline:none;font-size:13px;background:transparent;width:100%;font-family:inherit;color:var(--text);}
+.tb-search svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0;}
+.tb-btn{background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9px;transition:background .15s;position:relative;}
+.tb-btn:hover,.tb-btn.active-panel{background:var(--bg);color:var(--navy);}
+.tb-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.tb-badge{position:absolute;top:4px;right:4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;}
+.uc{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 9px;border-radius:9px;transition:background .15s;position:relative;}
+.uc:hover,.uc.active-panel{background:var(--bg);}
+.av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue2),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;}
+.av.sm{width:38px;height:38px;font-size:15px;}
+.un{font-size:13px;font-weight:600;line-height:1.3;}
+.ur{font-size:11px;color:var(--muted);}
+
+.conn-bar{display:flex;align-items:center;gap:6px;padding:0 14px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11.5px;font-weight:500;flex-shrink:0;height:28px;transition:background .3s,color .3s;}
+.conn-bar.online{background:#f0fdf4;color:#16a34a;border-bottom-color:#bbf7d0;}
+.conn-bar.offline{background:#fef2f2;color:#dc2626;border-bottom-color:#fecaca;}
+.conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.conn-bar.online .conn-dot{background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.25);}
+.conn-bar.offline .conn-dot{background:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.25);animation:pulse-dot 1.5s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+
+.tb-dropdown{position:absolute;top:calc(var(--top) + 6px);right:22px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14);z-index:250;display:none;animation:dropIn .18s cubic-bezier(.4,0,.2,1);}
+.tb-dropdown.show{display:block;}
+@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.notif-panel{width:360px;}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--border);}
+.panel-hdr-title{font-size:14px;font-weight:700;}
+.panel-hdr-action{font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;}
+.panel-hdr-action:hover{text-decoration:underline;}
+.notif-list{max-height:340px;overflow-y:auto;}
+.notif-list::-webkit-scrollbar{width:3px;}
+.notif-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.notif-item{display:flex;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item:hover{background:#f8fafc;}
+.notif-item.unread{background:#fafbff;}
+.notif-item.unread::before{content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--blue);}
+.notif-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-icon svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.notif-content{flex:1;min-width:0;}
+.notif-text{font-size:13px;font-weight:500;line-height:1.45;color:var(--text);}
+.notif-text strong{font-weight:700;}
+.notif-time{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.panel-footer{padding:12px 18px;border-top:1px solid var(--border);text-align:center;}
+.panel-footer a{font-size:13px;color:var(--blue);font-weight:600;cursor:pointer;text-decoration:none;}
+.panel-footer a:hover{text-decoration:underline;}
+
+.msg-panel{width:340px;}
+.msg-item{display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.msg-item:last-child{border-bottom:none;}
+.msg-item:hover{background:#f8fafc;}
+.msg-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;}
+.msg-content{flex:1;min-width:0;}
+.msg-name{font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between;}
+.msg-time{font-size:11px;color:var(--muted);font-weight:400;}
+.msg-preview{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.msg-unread-dot{width:8px;height:8px;background:var(--blue);border-radius:50%;flex-shrink:0;margin-top:2px;}
+.msg-compose{display:flex;align-items:center;gap:8px;padding:12px 18px;border-top:1px solid var(--border);}
+.msg-compose-input{flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;background:var(--bg);}
+.msg-compose-input:focus{border-color:var(--blue);}
+.msg-send-btn{width:34px;height:34px;background:var(--blue);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.msg-send-btn:hover{background:var(--navy);}
+.msg-send-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+.admin-panel{width:240px;}
+.admin-user-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;}
+.admin-user-name{font-size:14px;font-weight:700;}
+.admin-user-role{font-size:12px;color:var(--muted);margin-top:2px;}
+.admin-email{font-size:11.5px;color:var(--blue);margin-top:1px;}
+.admin-menu{padding:6px 0;}
+.admin-menu-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:background .15s;}
+.admin-menu-item:hover{background:var(--bg);}
+.admin-menu-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--muted);}
+.admin-menu-item.danger{color:var(--red);}
+.admin-menu-item.danger svg{color:var(--red);}
+.admin-menu-item.danger:hover{background:#fef2f2;}
+.admin-divider{height:1px;background:var(--border);margin:4px 0;}
+.admin-status{display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:12.5px;color:var(--muted);}
+.online-dot{width:8px;height:8px;background:var(--green);border-radius:50%;flex-shrink:0;box-shadow:0 0 0 2px rgba(34,197,94,.2);}
+
+.content{flex:1;overflow-y:auto;padding:22px 24px 32px;}
+.content::-webkit-scrollbar{width:5px;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.page{display:none;animation:fadeIn .2s;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-hdr{margin-bottom:20px;}
+.page-hdr h1{font-size:20px;font-weight:800;color:var(--navy);}
+.page-hdr p{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.page-hdr-row{display:flex;align-items:center;justify-content:space-between;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.card-title{font-size:14px;font-weight:700;}
+.card-body{padding:18px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;transition:box-shadow .2s;}
+.stat:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);}
+.stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stat-icon svg{width:22px;height:22px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.stat-lbl{font-size:12px;color:var(--muted);font-weight:500;}
+.stat-val{font-size:24px;font-weight:800;line-height:1.1;}
+.stat-val.red{color:var(--red);}
+.stat-val.blue{color:var(--blue);}
+.stat-val.green{color:var(--green);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.full{grid-column:1/-1;}
+.mb16{margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 14px;color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;background:#f8fafc;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#f8fafc;}
+.tbl-wrap{overflow-x:auto;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.badge-red{background:#fef2f2;color:#dc2626;}
+.badge-orange{background:#fff7ed;color:#ea580c;}
+.badge-yellow{background:#fefce8;color:#ca8a04;}
+.badge-green{background:#f0fdf4;color:#16a34a;}
+.badge-blue{background:#eff6ff;color:#2563eb;}
+.badge-gray{background:#f1f5f9;color:#475569;}
+.pager{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--border);font-size:12.5px;color:var(--muted);}
+.pager-btns{display:flex;gap:6px;}
+.pager-btn{padding:5px 12px;border:1px solid var(--border);border-radius:7px;background:var(--card);font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s;}
+.pager-btn:hover{background:var(--bg);}
+.pager-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.g1{grid-template-columns:1fr;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:12px;font-weight:600;color:var(--text);}
+.fg label .req{color:var(--red);}
+.fg input,.fg select,.fg textarea{padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);transition:border-color .15s,box-shadow .15s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.fg input[readonly]{background:#f1f5f9;color:var(--muted);cursor:not-allowed;}
+.fg textarea{resize:vertical;min-height:80px;}
+.fg-full{grid-column:1/-1;}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border);}
+.btn{padding:9px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-primary:hover{background:var(--navy2);}
+.btn-primary:disabled{background:var(--muted);cursor:not-allowed;opacity:.6;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{background:#dc2626;}
+.btn-success{background:var(--green);color:#fff;}
+.btn-success:hover{background:#16a34a;}
+.btn-ghost{background:var(--bg);border:1px solid var(--border);color:var(--text);}
+.btn-ghost:hover{background:var(--border);}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.act-btns{display:flex;gap:4px;}
+.act-btn{background:none;border:none;cursor:pointer;color:var(--muted);width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
+.act-btn:hover{background:var(--bg);color:var(--navy);}
+.act-btn.danger:hover{background:#fef2f2;color:var(--red);}
+.act-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;animation:fadeIn .2s;}
+.modal{background:#fff;border-radius:16px;width:640px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.25);}
+.modal.sm{width:480px;}
+.modal.lg{width:800px;}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--muted);width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.modal-close:hover{background:var(--bg);}
+.modal-close svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+.modal-body{padding:22px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;}
+.qa-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:20px;overflow:hidden;}
+.qa-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 16px;overflow-x:auto;}
+.qa-tabs::-webkit-scrollbar{height:0;}
+.qa-tab{padding:12px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-weight:500;transition:.15s;white-space:nowrap;}
+.qa-tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:700;}
+.qa-panel{display:none;padding:20px;}
+.qa-panel.active{display:block;}
+.issue-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.preview-box{background:var(--bg);border-radius:12px;padding:16px;min-height:200px;}
+.preview-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.preview-title svg{width:14px;height:14px;stroke:var(--blue);fill:none;stroke-width:2;}
+.preview-empty{color:var(--muted);font-size:13px;text-align:center;padding:40px 20px;}
+.search-wrap{position:relative;}
+.search-wrap input{padding-right:34px;}
+.search-wrap svg{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:2;pointer-events:none;}
+.book-tag{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-top:6px;font-size:12.5px;}
+.book-tag .remove{margin-left:auto;cursor:pointer;color:var(--red);font-size:13px;line-height:1;}
+.member-prev-card{background:#fff;border-radius:10px;padding:12px;display:flex;gap:12px;margin-bottom:12px;}
+.book-prev-row{background:#fff;border-radius:8px;padding:9px 12px;display:flex;gap:10px;margin-bottom:6px;}
+.book-mini-cover{width:32px;height:44px;border-radius:4px;background:linear-gradient(135deg,var(--blue),var(--accent));flex-shrink:0;}
+.donut-wrap{display:flex;align-items:center;gap:22px;padding:8px 0;}
+svg.donut{width:130px;height:130px;flex-shrink:0;}
+.legend{display:flex;flex-direction:column;gap:7px;}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+.legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
+.search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;display:none;}
+.search-results.show{display:block;}
+.sr-item{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;}
+.sr-item:last-child{border-bottom:none;}
+.sr-item:hover{background:var(--bg);}
+.detail-row{display:flex;gap:8px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border);}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{color:var(--muted);font-weight:500;width:130px;flex-shrink:0;}
+.detail-value{font-weight:600;}
+.flex{display:flex;align-items:center;}
+.gap8{gap:8px;}
+.gap12{gap:12px;}
+.mt16{margin-top:16px;}
+.mb12{margin-bottom:12px;}
+.text-red{color:var(--red);}
+.text-green{color:var(--green);}
+.text-blue{color:var(--blue);}
+.text-muted{color:var(--muted);}
+.fw7{font-weight:700;}
+.fs13{font-size:13px;}
+.fs12{font-size:12px;}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--navy3);color:#fff;padding:13px 20px;border-radius:12px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 48px);}
+#toast.show{opacity:1;}
+#toast svg{width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:2.5;flex-shrink:0;}
+
+.tb-hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--navy);width:36px;height:36px;border-radius:9px;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0;}
+.tb-hamburger:hover{background:var(--bg);}
+.tb-hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+.checkbox-wrap{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.checkbox-wrap input[type="checkbox"]{width:16px;height:16px;accent-color:var(--blue);}
+
+@media(max-width:1024px){.g2{grid-template-columns:1fr;}.g3{grid-template-columns:1fr 1fr;}.issue-layout{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:768px){
+  #sb{left:calc(-1 * var(--sbw));width:var(--sbw);cursor:default;border-right:none;box-shadow:none;}
+  #sb.open{left:0;box-shadow:8px 0 32px rgba(0,0,0,.4);}
+  #sb.open .ni-label{opacity:1;}#sb.open .ni-arr{opacity:1;}#sb.open .sb-section{opacity:1;}#sb.open .sb-close{display:flex;}
+  .sb-head{padding-right:44px;}
+  #main{margin-left:0 !important;}
+  .tb-hamburger{display:flex;}
+  .topbar{padding:0 14px;gap:8px;}
+  .tb-search{width:140px;}
+  .uc .un,.uc .ur{display:none;}
+  .content{padding:16px 14px 28px;}
+  .page-hdr h1{font-size:17px;}
+  .page-hdr-row{flex-direction:column;align-items:flex-start;gap:12px;}
+  .form-grid{grid-template-columns:1fr;}
+  .fg-full{grid-column:1;}
+  .tb-dropdown{right:10px;}
+  .notif-panel,.msg-panel{width:calc(100vw - 20px);}
+  .admin-panel{width:220px;}
+}
+@media(max-width:540px){.stats{grid-template-columns:1fr;}.g3{grid-template-columns:1fr;}.tb-search{display:none;}}
+</style>
+</head>
+<body>
+
+<div id="ov" onclick="closeSB()"></div>
+
+<aside id="sb" onclick="handleSBClick(event)">
+  <button class="sb-close" onclick="closeSB();event.stopPropagation();"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="sb-head">
+    <div class="sb-logo-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+    <span class="sb-logo-text">Library System<span>Management Portal</span></span>
+  </div>
+  <nav class="sb-nav">
+    <div class="ni active" data-page="dashboard" onclick="nav('dashboard',this)"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="ni-label">Dashboard</span></div>
+    <div class="sb-section">Library</div>
+    <div class="ni" onclick="toggleSub('bsub',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="ni-label">Manage Books</span><span class="ni-arr" id="arr-bsub">›</span></div>
+    <div class="nsub" id="bsub">
+      <div class="ni" data-page="books-all" onclick="nav('books-all',this)"><svg class="ic" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span class="ni-label">View All Books</span></div>
+      <div class="ni" data-page="books-add" onclick="nav('books-add',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span class="ni-label">Add New Book</span></div>
+    </div>
+    <div class="ni" onclick="toggleSub('msub',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="ni-label">Manage Members</span><span class="ni-arr" id="arr-msub">›</span></div>
+    <div class="nsub" id="msub">
+      <div class="ni" data-page="members-all" onclick="nav('members-all',this)"><svg class="ic" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span class="ni-label">View All Members</span></div>
+      <div class="ni" data-page="members-add" onclick="nav('members-add',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span class="ni-label">Register Member</span></div>
+    </div>
+    <div class="ni" onclick="toggleSub('csub',this)"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="ni-label">Manage Category</span><span class="ni-arr" id="arr-csub">›</span></div>
+    <div class="nsub" id="csub">
+      <div class="ni" data-page="categories" onclick="nav('categories',this)"><svg class="ic" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span class="ni-label">All Categories</span></div>
+    </div>
+    <div class="sb-section">Circulation</div>
+    <div class="ni" data-page="issue" onclick="nav('issue',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg><span class="ni-label">Issue Book(s)</span></div>
+    <div class="ni" data-page="return" onclick="nav('return',this)"><svg class="ic" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.35"/></svg><span class="ni-label">Return Book(s)</span></div>
+    <div class="ni" data-page="issued-list" onclick="nav('issued-list',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span class="ni-label">Issued Books</span></div>
+    <div class="ni" data-page="returned-list" onclick="nav('returned-list',this)"><svg class="ic" viewBox="0 0 24 24"><polyline points="20 9 20 20 4 20 4 9"/><path d="M1 9l11-7 11 7"/></svg><span class="ni-label">Returned Books</span></div>
+    <div class="ni" data-page="overdue" onclick="nav('overdue',this)"><svg class="ic" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="ni-label">Overdue Books</span></div>
+    <div class="ni" data-page="fines" onclick="nav('fines',this)"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span class="ni-label">Fines &amp; Payments</span></div>
+  </nav>
+</aside>
+
+<div id="main">
+  <header class="topbar">
+    <button class="tb-hamburger" onclick="openSB()"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <span class="tb-title" id="tb-title">Dashboard</span>
+    <div class="tb-gap"></div>
+    <div class="tb-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search books, members..."></div>
+    <button class="tb-btn" id="btn-notif" title="Notifications" onclick="togglePanel('notif')"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="tb-badge" id="notif-badge">6</span></button>
+    <button class="tb-btn" id="btn-msg" title="Messages" onclick="togglePanel('msg')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="tb-badge" style="background:var(--green);">3</span></button>
+    <div class="uc" id="btn-admin" onclick="togglePanel('admin')">
+      <div class="av">R</div>
+      <div><div class="un">Ravindu Perera</div><div class="ur">Admin</div></div>
+      <svg style="width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </header>
+
+  <div class="conn-bar offline" id="conn-bar"><span class="conn-dot"></span><span id="conn-text">Connecting to server...</span><span style="margin-left:auto;cursor:pointer;font-weight:600;" onclick="initApp()">Retry</span></div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="tb-dropdown notif-panel" id="panel-notif">
+    <div class="panel-hdr"><div class="panel-hdr-title">Notifications <span class="badge badge-blue" style="font-size:11px;padding:2px 8px;margin-left:6px;">6 New</span></div><span class="panel-hdr-action" onclick="markAllRead()">Mark all read</span></div>
+    <div class="notif-list">
+      <div class="notif-item unread" onclick="markRead(this)"><div class="notif-icon" style="background:#fef2f2;"><svg stroke="#ef4444" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="notif-content"><div class="notif-text"><strong>Overdue Alert:</strong> "The 5 AM Club" is 12 days overdue</div><div class="notif-time">2 minutes ago</div></div></div>
+      <div class="notif-item unread" onclick="markRead(this)"><div class="notif-icon" style="background:#f0fdf4;"><svg stroke="#16a34a" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.35"/></svg></div><div class="notif-content"><div class="notif-text"><strong>Book Returned:</strong> "The Great Gatsby" returned successfully</div><div class="notif-time">1 hour ago</div></div></div>
+      <div class="notif-item unread" onclick="markRead(this)"><div class="notif-icon" style="background:#eff6ff;"><svg stroke="#2563eb" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div><div class="notif-content"><div class="notif-text"><strong>New Member:</strong> Edmund Wright registered</div><div class="notif-time">2 hours ago</div></div></div>
+    </div>
+    <div class="panel-footer"><a onclick="closeAllPanels()">Close</a></div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="tb-dropdown msg-panel" id="panel-msg">
+    <div class="panel-hdr"><div class="panel-hdr-title">Messages</div></div>
+    <div class="notif-list"><div class="msg-item"><div class="msg-av" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">E</div><div class="msg-content"><div class="msg-name">Edmund Wright <span class="msg-time">2m ago</span></div><div class="msg-preview">Hello, I wanted to ask about renewing my borrowed books...</div></div></div></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="tb-dropdown admin-panel" id="panel-admin">
+    <div class="admin-user-header"><div class="av sm">R</div><div><div class="admin-user-name">Ravindu Perera</div><div class="admin-user-role">System Administrator</div><div class="admin-email">ravindu@library.lk</div></div></div>
+    <div class="admin-status"><div class="online-dot"></div><span>Online</span></div>
+    <div class="admin-divider"></div>
+    <div class="admin-menu">
+      <div class="admin-menu-item" onclick="closeAllPanels();toast('Profile page coming soon')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>My Profile</div>
+      <div class="admin-divider"></div>
+      <div class="admin-menu-item danger" onclick="handleLogout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log Out</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-hdr"><div class="page-hdr-row"><div><h1>Welcome! Admin &#x1F44B;</h1><p id="dash-date"></p></div></div></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-icon" style="background:#eff6ff;"><svg viewBox="0 0 24 24" stroke="#2563eb"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div><div class="stat-lbl">Total Books</div><div class="stat-val blue" id="stat-total">&mdash;</div></div></div>
+        <div class="stat"><div class="stat-icon" style="background:#f0fdf4;"><svg viewBox="0 0 24 24" stroke="#16a34a"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div><div><div class="stat-lbl">Total Copies</div><div class="stat-val green" id="stat-copies">&mdash;</div></div></div>
+        <div class="stat"><div class="stat-icon" style="background:#fef2f2;"><svg viewBox="0 0 24 24" stroke="#ef4444"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div class="stat-lbl">Unavailable</div><div class="stat-val red" id="stat-unavail">&mdash;</div></div></div>
+        <div class="stat"><div class="stat-icon" style="background:#faf5ff;"><svg viewBox="0 0 24 24" stroke="#9333ea"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="stat-lbl">Members</div><div class="stat-val" id="stat-members">&mdash;</div></div></div>
+      </div>
+      <div class="g2 mb16"><div class="card full"><div class="card-hdr"><div class="card-title">Books with Low Availability</div></div><div class="tbl-wrap"><table><thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Total</th><th>Available</th><th>Status</th></tr></thead><tbody id="dash-low-tbody"></tbody></table></div></div></div>
+      <div class="g2">
+        <div class="card"><div class="card-hdr"><div class="card-title">Categories</div></div><div class="card-body"><div class="donut-wrap"><svg class="donut" viewBox="0 0 42 42"><circle r="15.9" cx="21" cy="21" fill="transparent" stroke="#e5e7eb" stroke-width="6"/><text x="21" y="22" text-anchor="middle" font-size="4" font-weight="700" fill="#1e293b" id="donut-total">&mdash;</text></svg><div class="legend" id="cat-legend"></div></div></div></div>
+        <div class="card"><div class="card-hdr"><div class="card-title">Restricted Members</div></div><table><thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead><tbody id="dash-restricted-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ALL BOOKS -->
+    <div class="page" id="page-books-all">
+      <div class="page-hdr"><div class="page-hdr-row"><div><h1>All Books</h1><p>Manage your library's book collection</p></div><button class="btn btn-primary" onclick="nav('books-add')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Book</button></div></div>
+      <div class="card"><div class="card-hdr"><div class="flex gap8"><input type="text" id="book-search" placeholder="Search books..." style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:220px;" oninput="renderBooksTable()"><select id="book-cat-filter" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff;" onchange="renderBooksTable()"><option value="">All Categories</option></select></div><span class="text-muted fs12" id="books-count"></span></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Category</th><th>Available</th><th>Status</th><th>Actions</th></tr></thead><tbody id="books-table-body"></tbody></table></div>
+        <div class="pager"><span id="books-pager-info"></span><div class="pager-btns" id="books-pager-btns"></div></div>
+      </div>
+    </div>
+
+    <!-- ADD BOOK -->
+    <div class="page" id="page-books-add">
+      <div class="page-hdr"><h1 id="add-book-title">Add New Book</h1><p>Fill in the details below to add a book to the library database.</p></div>
+      <div class="card"><div class="card-body"><div class="form-grid">
+        <div class="fg"><label>Book ID <span class="req">*</span></label><input type="text" id="add-id" placeholder="e.g: B011"></div>
+        <div class="fg"><label>Book Title <span class="req">*</span></label><input type="text" id="add-title" placeholder="Enter the full title"></div>
+        <div class="fg"><label>Author Name <span class="req">*</span></label><input type="text" id="add-author" placeholder="Enter primary author name"></div>
+        <div class="fg"><label>ISBN Number <span class="req">*</span></label><input type="text" id="add-isbn" placeholder="Enter ISBN number"></div>
+        <div class="fg"><label>Category <span class="req">*</span></label><input type="text" id="add-cat" placeholder="e.g: Fiction, Non-Fiction"></div>
+        <div class="fg"><label>Quantity <span class="req">*</span></label><input type="number" id="add-qty" placeholder="Number of copies" min="1"></div>
+      </div><div class="form-actions"><button class="btn btn-ghost" onclick="nav('books-all')">Cancel</button><button class="btn btn-primary" id="btn-save-book" onclick="saveBook()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirm Book</button></div></div></div>
+    </div>
+
+    <!-- ALL MEMBERS -->
+    <div class="page" id="page-members-all">
+      <div class="page-hdr"><div class="page-hdr-row"><div><h1>All Members</h1><p>Manage library members</p></div><button class="btn btn-primary" onclick="nav('members-add')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Register Member</button></div></div>
+      <div class="card"><div class="card-hdr"><span class="text-muted fs12" id="members-count"></span></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Member ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead><tbody id="members-table-body"></tbody></table></div>
+        <div class="pager"><span id="members-pager-info"></span><div class="pager-btns" id="members-pager-btns"></div></div>
+      </div>
+    </div>
+
+    <!-- REGISTER MEMBER -->
+    <div class="page" id="page-members-add">
+      <div class="page-hdr"><h1>Register New Member</h1><p>Fill in the details below to register a new member.</p></div>
+      <div class="card"><div class="card-body"><div class="form-grid">
+        <div class="fg"><label>First Name <span class="req">*</span></label><input type="text" id="m-add-fname" placeholder="e.g: Jason"></div>
+        <div class="fg"><label>Last Name <span class="req">*</span></label><input type="text" id="m-add-lname" placeholder="e.g: Lee"></div>
+        <div class="fg"><label>Email <span class="req">*</span></label><input type="email" id="m-add-email" placeholder="example@gmail.com"></div>
+        <div class="fg"><label>Member ID</label><input type="text" id="m-add-id" readonly></div>
+        <div class="fg"><label>Phone <span class="req">*</span></label><input type="text" id="m-add-phone" placeholder="07x xxx xxxx"></div>
+        <div class="fg"><label>Type <span class="req">*</span></label><select id="m-add-type"><option value="Standard">Standard</option><option value="Premium">Premium</option><option value="Student">Student</option></select></div>
+        <div class="fg fg-full"><label>Address</label><input type="text" id="m-add-address" placeholder="Full residential address"></div>
+        <div class="fg"><label>Start Date</label><input type="date" id="m-add-start"></div>
+        <div class="fg"><label>Expiry Date</label><input type="date" id="m-add-expiry"></div>
+      </div><div class="form-actions"><button class="btn btn-ghost" onclick="nav('members-all')">Cancel</button><button class="btn btn-primary" id="btn-save-member" onclick="saveMember()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirm Member</button></div></div></div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="page" id="page-categories"><div class="page-hdr"><h1>Book Categories</h1><p>Book genres derived from your collection</p></div><div class="g3" id="cat-grid"></div></div>
+
+    <!-- ISSUE BOOKS -->
+    <div class="page" id="page-issue">
+      <div class="page-hdr"><h1>Issue Book(s)</h1><p>Search for a member and select books to issue</p></div>
+      <div class="card"><div class="card-body"><div class="issue-layout"><div>
+        <div class="fg mb12"><label>Search Member <span class="req">*</span></label><div class="search-wrap" style="position:relative;"><input type="text" id="iss-ms" placeholder="Search member..." oninput="issSearchMember(this.value)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="search-results" id="iss-ms-results"></div></div></div>
+        <div class="fg mb12"><label>Search Book <span class="req">*</span> <span id="iss-bcnt" class="text-muted fs12">(0/3 selected)</span></label><div class="search-wrap" style="position:relative;"><input type="text" id="iss-bs" placeholder="Search book..." oninput="issSearchBook(this.value)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="search-results" id="iss-bs-results"></div></div><div id="iss-selected-books"></div></div>
+        <div class="form-grid" style="gap:10px;"><div class="fg"><label>Issue Date</label><input type="date" id="iss-idate" oninput="updateIssPreview()"></div><div class="fg"><label>Due Date</label><input type="date" id="iss-ddate" oninput="updateIssPreview()"></div></div>
+        <div class="form-actions"><button class="btn btn-ghost" onclick="resetIss()">Cancel</button><button class="btn btn-primary" id="btn-issue" onclick="confirmIssue()">Confirm Issue</button></div>
+      </div><div><div class="preview-box"><div class="preview-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Issue Preview</div><div class="preview-empty" id="iss-preview-empty">Select a member and book(s) to see preview.</div><div id="iss-preview-content" style="display:none;"></div></div></div></div></div></div>
+    </div>
+
+    <!-- RETURN BOOKS -->
+    <div class="page" id="page-return">
+      <div class="page-hdr"><h1>Return Book(s)</h1><p>Process book returns and update records</p></div>
+      <div class="card"><div class="card-body"><div class="issue-layout"><div>
+        <div class="fg mb12"><label>Search Member <span class="req">*</span></label><div class="search-wrap" style="position:relative;"><input type="text" id="ret-ms" placeholder="Search member..." oninput="retSearchMember(this.value)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="search-results" id="ret-ms-results"></div></div></div>
+        <div id="ret-issued-books" class="mb12"></div>
+        <div class="fg mb12"><label>Return Date</label><input type="date" id="ret-rdate"></div>
+        <div class="form-actions"><button class="btn btn-ghost" onclick="resetRet()">Cancel</button><button class="btn btn-success" id="btn-return" onclick="confirmReturn()">Confirm Return</button></div>
+      </div><div><div class="preview-box"><div class="preview-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Return Preview</div><div class="preview-empty" id="ret-preview-empty">Select a member to see their issued books.</div><div id="ret-preview-content" style="display:none;"></div></div></div></div></div></div>
+    </div>
+
+    <!-- ISSUED LIST -->
+    <div class="page" id="page-issued-list"><div class="page-hdr"><h1>Issued Books</h1><p>All currently issued book records</p></div><div class="card"><div class="tbl-wrap"><table><thead><tr><th>Issue ID</th><th>Book</th><th>Member</th><th>Issue Date</th><th>Due Date</th><th>Status</th></tr></thead><tbody id="issued-table-body"></tbody></table></div></div></div>
+
+    <!-- RETURNED LIST -->
+    <div class="page" id="page-returned-list"><div class="page-hdr"><h1>Returned Books</h1><p>History of all returned books</p></div><div class="card"><div class="tbl-wrap"><table><thead><tr><th>Return ID</th><th>Book</th><th>Member</th><th>Return Date</th><th>Days Overdue</th><th>Fine</th></tr></thead><tbody id="returned-table-body"></tbody></table></div></div></div>
+
+    <!-- OVERDUE -->
+    <div class="page" id="page-overdue"><div class="page-hdr"><h1>Overdue Books</h1><p>Books past their due date</p></div><div class="card"><div class="tbl-wrap"><table><thead><tr><th>Issue ID</th><th>Book</th><th>Member</th><th>Due Date</th><th>Days Overdue</th><th>Fine (LKR)</th></tr></thead><tbody id="overdue-table-body"></tbody></table></div></div></div>
+
+    <!-- FINES -->
+    <div class="page" id="page-fines"><div class="page-hdr"><h1>Fines &amp; Payments</h1><p>Track and manage member fines</p></div><div class="card"><div class="tbl-wrap"><table><thead><tr><th>Fine ID</th><th>Member</th><th>Book</th><th>Amount (LKR)</th><th>Status</th><th>Action</th></tr></thead><tbody id="fines-table-body"></tbody></table></div></div></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-book-detail"><div class="modal lg"><div class="modal-hdr"><div class="modal-title" id="modal-book-title-text">Book Details</div><button class="modal-close" onclick="closeModal('modal-book-detail')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body" id="modal-book-body"></div><div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-book-detail')">Close</button></div></div></div>
+<div class="modal-overlay" id="modal-delete"><div class="modal sm"><div class="modal-hdr"><div class="modal-title">Confirm Delete</div><button class="modal-close" onclick="closeModal('modal-delete')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body"><p class="fs13" id="delete-msg">Are you sure?</p></div><div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-delete')">Cancel</button><button class="btn btn-danger" id="btn-confirm-delete" onclick="confirmDelete()">Yes, Delete</button></div></div></div>
+<div class="modal-overlay" id="modal-member-detail"><div class="modal"><div class="modal-hdr"><div class="modal-title" id="modal-member-title">Member Details</div><button class="modal-close" onclick="closeModal('modal-member-detail')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body" id="modal-member-body"></div><div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-member-detail')">Close</button></div></div></div>
+
+<div id="toast"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span id="toast-msg">Done!</span></div>
+
+<script>
+const API_BASE = 'http://localhost:9000';
+let BOOKS = [], MEMBERS = [], ISSUES = [], RETURNS = [], OVERDUE_LIST = [], FINES_LIST = [];
+let isServerOnline = false;
+let booksPage = 1, membersPage = 1;
+const PER_PAGE = 10;
+let _deleteCallback = null;
+let issMember = null, issBooks = [], retMember = null, retIssuedBooks = [], retSelectedIds = [];
+let _editingBookId = null;
+
+async function api(endpoint, method = 'GET', body = null) {
+  const opts = { method };
+  if (body) { opts.headers = { 'Content-Type': 'application/json' }; opts.body = JSON.stringify(body); }
+  const res = await fetch(API_BASE + endpoint, opts);
+  if (!res.ok) { const t = await res.text(); throw new Error(t || res.status); }
+  const text = await res.text();
+  if (!text) return {};
+  try { return JSON.parse(text); } catch(e) { return text; }
+}
+
+async function initApp() {
+  const bar = document.getElementById('conn-bar');
+  const txt = document.getElementById('conn-text');
+  txt.textContent = 'Connecting...';
+  bar.className = 'conn-bar offline';
+  try {
+    BOOKS = await api('/api/books');
+    MEMBERS = await api('/api/members');
+    isServerOnline = true;
+    bar.className = 'conn-bar online';
+    txt.textContent = 'Connected to ' + API_BASE;
+  } catch(e) {
+    isServerOnline = false;
+    bar.className = 'conn-bar offline';
+    txt.textContent = 'Offline: ' + e.message;
+    BOOKS = []; MEMBERS = [];
+  }
+  ISSUES = []; RETURNS = []; OVERDUE_LIST = []; FINES_LIST = [];
+  try { ISSUES = await api('/api/issued'); } catch(e) {}
+  try { RETURNS = await api('/api/returned'); } catch(e) {}
+  try { OVERDUE_LIST = await api('/api/overdue'); } catch(e) {}
+  try { FINES_LIST = await api('/api/fines'); } catch(e) {}
+  setDashDate();
+  onDataLoaded();
+}
+
+function onDataLoaded() {
+  const p = document.querySelector('.page.active')?.id.replace('page-', '');
+  renderPage(p || 'dashboard');
+}
+
+function updateDashStats() {
+  document.getElementById('stat-total').textContent = BOOKS.length;
+  document.getElementById('stat-copies').textContent = BOOKS.reduce((s,b) => s + (b.qty||0), 0);
+  document.getElementById('stat-unavail').textContent = BOOKS.filter(b => (b.available||0) <= 0).length;
+  document.getElementById('stat-members').textContent = MEMBERS.length;
+  document.getElementById('donut-total').textContent = BOOKS.length;
+  const cc = {};
+  BOOKS.forEach(b => { if(b.cat) cc[b.cat] = (cc[b.cat]||0)+1; });
+  const colors = ['#3b82f6','#f97316','#22c55e','#a855f7','#ec4899','#ef4444','#eab308','#14b8a6'];
+  document.getElementById('cat-legend').innerHTML = Object.entries(cc).sort((a,b)=>b[1]-a[1]).map((e,i) =>
+    '<div class="legend-item"><div class="legend-dot" style="background:'+colors[i%colors.length]+'"></div>'+esc(e[0])+' ('+e[1]+')</div>').join('');
+  const low = BOOKS.filter(b => (b.available||0) < (b.qty||0) && (b.qty||0) > 0).sort((a,b) => a.available - b.available).slice(0,5);
+  document.getElementById('dash-low-tbody').innerHTML = low.length ? low.map(b => {
+    const p = b.available/b.qty, cls = p===0?'badge-red':p<=.3?'badge-orange':'badge-yellow';
+    return '<tr><td class="fw7">'+esc(b.title)+'</td><td>'+esc(b.author)+'</td><td><span class="badge badge-blue">'+esc(b.cat)+'</span></td><td>'+b.qty+'</td><td><span class="badge '+cls+'">'+b.available+'</span></td><td><span class="badge '+(p===0?'badge-red':'badge-orange')+'">'+(p===0?'Out of Stock':'Low')+'</span></td></tr>';
+  }).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted);">All books available!</td></tr>';
+  const restricted = MEMBERS.filter(m => m.status === 'Restricted');
+  document.getElementById('dash-restricted-tbody').innerHTML = restricted.length ? restricted.map(m =>
+    '<tr><td class="fs12">'+esc(m.id)+'</td><td>'+esc(m.name)+'</td><td><span class="badge badge-red">Restricted</span></td></tr>').join('') : '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted);">None</td></tr>';
+}
+
+function getFilteredBooks() {
+  const q = (document.getElementById('book-search')?.value||'').toLowerCase();
+  const cat = document.getElementById('book-cat-filter')?.value||'';
+  return BOOKS.filter(b => (!q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || (b.isbn||'').includes(q)) && (!cat || b.cat === cat));
+}
+function updateCategoryFilter() {
+  const sel = document.getElementById('book-cat-filter'), cur = sel.value;
+  const cats = [...new Set(BOOKS.map(b=>b.cat).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => '<option value="'+esc(c)+'"'+(c===cur?' selected':'')+'>'+esc(c)+'</option>').join('');
+}
+function renderBooksTable() {
+  updateCategoryFilter();
+  const f = getFilteredBooks(), tp = Math.max(1, Math.ceil(f.length/PER_PAGE));
+  if(booksPage>tp) booksPage=tp;
+  const s = (booksPage-1)*PER_PAGE, pb = f.slice(s, s+PER_PAGE);
+  document.getElementById('books-count').textContent = f.length + ' book(s)';
+  document.getElementById('books-table-body').innerHTML = pb.length ? pb.map(b => {
+    const a = (b.available||0)>0;
+    return '<tr><td class="fw7">'+esc(b.title)+'</td><td>'+esc(b.author)+'</td><td class="text-muted fs12">'+esc(b.isbn)+'</td><td><span class="badge badge-blue">'+esc(b.cat)+'</span></td><td><span class="badge '+(a?'badge-green':'badge-red')+'">'+b.available+'/'+b.qty+'</span></td><td><span class="badge '+(a?'badge-green':'badge-red')+'">'+(a?'Available':'Out of Stock')+'</span></td>'+
+    '<td class="act-btns">'+
+      '<button class="act-btn" title="View" onclick="openBookDetail(\''+b.id+'\')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+      '<button class="act-btn" title="Edit" onclick="editBook(\''+b.id+'\')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'+
+      '<button class="act-btn danger" title="Delete" onclick="openDeleteBook(\''+b.id+'\',\''+esc(b.title).replace(/'/g,"\\'")+'\')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>'+
+    '</td></tr>';}).join('') : '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">No books found.</td></tr>';
+  document.getElementById('books-pager-info').textContent = f.length ? 'Showing '+(s+1)+'–'+Math.min(s+PER_PAGE,f.length)+' of '+f.length : '';
+  let bh = '';
+  if(tp>1){bh+='<button class="pager-btn" onclick="booksPage=Math.max(1,booksPage-1);renderBooksTable()" '+(booksPage===1?'disabled':'')+'>&lsaquo;</button>';for(let p=1;p<=tp;p++)bh+='<button class="pager-btn '+(p===booksPage?'active':'')+'" onclick="booksPage='+p+';renderBooksTable()">'+p+'</button>';bh+='<button class="pager-btn" onclick="booksPage=Math.min('+tp+',booksPage+1);renderBooksTable()" '+(booksPage===tp?'disabled':'')+'>&rsaquo;</button>';}
+  document.getElementById('books-pager-btns').innerHTML = bh;
+}
+
+function editBook(id) {
+  const b = BOOKS.find(x=>x.id===id); if(!b) return;
+  _editingBookId = id;
+  document.getElementById('add-book-title').textContent = 'Edit Book';
+  document.getElementById('add-id').value = b.id; document.getElementById('add-id').readOnly = true;
+  document.getElementById('add-title').value = b.title;
+  document.getElementById('add-author').value = b.author;
+  document.getElementById('add-isbn').value = b.isbn;
+  document.getElementById('add-cat').value = b.cat;
+  document.getElementById('add-qty').value = b.qty;
+  nav('books-add');
+}
+async function saveBook() {
+  const id=document.getElementById('add-id').value.trim(), title=document.getElementById('add-title').value.trim(), author=document.getElementById('add-author').value.trim(), isbn=document.getElementById('add-isbn').value.trim(), cat=document.getElementById('add-cat').value.trim(), qtyStr=document.getElementById('add-qty').value.trim();
+  if(!id||!title||!author||!isbn||!cat||!qtyStr){toast('Please fill all fields');return;}
+  const qty=parseInt(qtyStr); if(isNaN(qty)||qty<1){toast('Invalid quantity');return;}
+  const btn=document.getElementById('btn-save-book'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    if(_editingBookId) {
+      const b = BOOKS.find(x=>x.id===_editingBookId);
+      const avail = qty - ((b.qty||0) - (b.available||0));
+      await api('/api/books/update', 'POST', {id,title,author,isbn,cat,qty,available:avail<0?0:avail});
+      toast('Book updated!');
+    } else {
+      if(BOOKS.find(x=>x.id===id)){toast('ID already exists');btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirm Book';return;}
+      await api('/api/books','POST',{id,title,author,isbn,cat,qty,available:qty});
+      toast('Book added!');
+    }
+    _editingBookId=null; document.getElementById('add-id').readOnly=false;
+    ['add-id','add-title','add-author','add-isbn','add-cat','add-qty'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('add-book-title').textContent='Add New Book';
+    await initApp(); nav('books-all');
+  } catch(e) { toast('Error: '+e.message); }
+  btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirm Book';
+}
+function openDeleteBook(id,title) {
+  document.getElementById('delete-msg').textContent='Delete "'+title+'" ('+id+')? This cannot be undone.';
+  _deleteCallback = async ()=>{
+    try{await api('/api/books?id='+encodeURIComponent(id),'DELETE');toast('Book deleted!');await initApp();}
+    catch(e){toast('Delete failed: '+e.message);}
+  };
+  openModal('modal-delete');
+}
+function confirmDelete(){closeModal('modal-delete');if(_deleteCallback){_deleteCallback();_deleteCallback=null;}}
+function openBookDetail(id){const b=BOOKS.find(x=>x.id===id);if(!b){toast('Not found');return;}const a=(b.available||0)>0;document.getElementById('modal-book-title-text').textContent=b.title;document.getElementById('modal-book-body').innerHTML='<div class="g2" style="gap:20px;"><div style="background:linear-gradient(135deg,var(--navy),var(--blue));height:180px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:48px;">&#x1F4D6;</div><div><div class="fw7" style="font-size:18px;margin-bottom:6px;">'+esc(b.title)+'</div><div class="text-muted fs13 mb12">by '+esc(b.author)+'</div><div class="detail-row"><div class="detail-label">Book ID</div><div class="detail-value">'+esc(b.id)+'</div></div><div class="detail-row"><div class="detail-label">ISBN</div><div class="detail-value">'+esc(b.isbn)+'</div></div><div class="detail-row"><div class="detail-label">Category</div><div class="detail-value">'+esc(b.cat)+'</div></div><div class="detail-row"><div class="detail-label">Total</div><div class="detail-value">'+b.qty+'</div></div><div class="detail-row"><div class="detail-label">Available</div><div class="detail-value '+(a?'text-green':'text-red')+'">'+b.available+'</div></div><div class="detail-row"><div class="detail-label">Status</div><div class="detail-value"><span class="badge '+(a?'badge-green':'badge-red')+'">'+(a?'Available':'Out of Stock')+'</span></div></div></div></div>';openModal('modal-book-detail');}
+
+function renderMembersTable() {
+  const f = MEMBERS;
+  document.getElementById('members-count').textContent = f.length + ' member(s)';
+  document.getElementById('members-table-body').innerHTML = f.length ? f.map(m =>
+    '<tr><td class="text-muted fs12">'+esc(m.id)+'</td><td><div class="flex gap8"><div class="av" style="width:28px;height:28px;font-size:11px;">'+(m.name||'?')[0]+'</div>'+esc(m.name)+'</div></td><td class="text-muted fs12">'+esc(m.email)+'</td><td class="fs12">'+esc(m.phone)+'</td><td><span class="badge badge-blue">'+esc(m.type)+'</span></td><td><span class="badge '+(m.status==='Active'?'badge-green':'badge-red')+'">'+(m.status||'Active')+'</span></td>'+
+    '<td class="act-btns"><button class="act-btn" title="View" onclick="viewMember(\''+m.id+'\')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+    '<button class="act-btn danger" title="Delete" onclick="deleteMember(\''+m.id+'\',\''+esc(m.name).replace(/'/g,"\\'")+'\')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></td></tr>').join('') : '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">No members.</td></tr>';
+  document.getElementById('members-pager-info').textContent = 'Showing '+f.length+' of '+f.length;
+  document.getElementById('members-pager-btns').innerHTML = '';
+}
+function viewMember(id){const m=MEMBERS.find(x=>x.id===id);if(!m)return;document.getElementById('modal-member-title').textContent=m.name;document.getElementById('modal-member-body').innerHTML='<div class="detail-row"><div class="detail-label">Member ID</div><div class="detail-value">'+esc(m.id)+'</div></div><div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">'+esc(m.name)+'</div></div><div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">'+esc(m.email)+'</div></div><div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">'+esc(m.phone)+'</div></div><div class="detail-row"><div class="detail-label">Type</div><div class="detail-value"><span class="badge badge-blue">'+esc(m.type)+'</span></div></div><div class="detail-row"><div class="detail-label">Status</div><div class="detail-value"><span class="badge '+(m.status==='Active'?'badge-green':'badge-red')+'">'+m.status+'</span></div></div><div class="detail-row"><div class="detail-label">Start Date</div><div class="detail-value">'+(m.start_date||'—')+'</div></div><div class="detail-row"><div class="detail-label">Expiry</div><div class="detail-value">'+(m.expiry_date||'—')+'</div></div>';openModal('modal-member-detail');}
+function deleteMember(id,name){document.getElementById('delete-msg').textContent='Delete member "'+name+'" ('+id+')?';_deleteCallback=async()=>{try{await api('/api/members?id='+encodeURIComponent(id),'DELETE');toast('Member deleted!');await initApp();}catch(e){toast('Error: '+e.message);}};openModal('modal-delete');}
+async function saveMember(){
+  const fname=document.getElementById('m-add-fname').value.trim(),lname=document.getElementById('m-add-lname').value.trim(),email=document.getElementById('m-add-email').value.trim(),id=document.getElementById('m-add-id').value.trim(),phone=document.getElementById('m-add-phone').value.trim(),type=document.getElementById('m-add-type').value,address=document.getElementById('m-add-address').value.trim(),sd=document.getElementById('m-add-start').value,ed=document.getElementById('m-add-expiry').value;
+  if(!fname||!lname||!email||!phone){toast('Fill required fields');return;}
+  const btn=document.getElementById('btn-save-member');btn.disabled=true;btn.textContent='Saving...';
+  try{await api('/api/members','POST',{id,name:fname+' '+lname,email,phone,type,status:'Active',gender:'',dob:'',nic:'',address,start_date:sd,expiry_date:ed});toast('Member registered!');['m-add-fname','m-add-lname','m-add-email','m-add-phone','m-add-address'].forEach(x=>document.getElementById(x).value='');await initApp();nav('members-all');}
+  catch(e){toast('Error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirm Member';
+}
+
+function renderCats(){const cm={};BOOKS.forEach(b=>{if(b.cat)cm[b.cat]=(cm[b.cat]||0)+1;});const en=Object.entries(cm).sort((a,b)=>b[1]-a[1]),mx=en.length?en[0][1]:1;const colors=['#3b82f6','#f97316','#22c55e','#a855f7','#ec4899','#ef4444','#eab308','#14b8a6'];document.getElementById('cat-grid').innerHTML=en.map((e,i)=>'<div class="card"><div class="card-body" style="text-align:center;"><div style="font-size:36px;margin-bottom:8px;">&#x1F4DA;</div><div class="fw7" style="font-size:15px;">'+esc(e[0])+'</div><div class="text-muted fs12" style="margin-top:4px;">'+e[1]+' book(s)</div><div style="height:6px;background:var(--border);border-radius:3px;margin-top:12px;overflow:hidden;"><div style="height:100%;width:'+Math.round(e[1]/mx*100)+'%;background:'+colors[i%colors.length]+';border-radius:3px;"></div></div></div></div>').join('');}
+
+function issSearchMember(v){const el=document.getElementById('iss-ms-results');if(!v){el.classList.remove('show');return;}const r=MEMBERS.filter(m=>m.name.toLowerCase().includes(v.toLowerCase())||m.id.toLowerCase().includes(v.toLowerCase()));el.innerHTML=r.slice(0,5).map(m=>'<div class="sr-item" onclick="selectIssMember(\''+m.id+'\')">'+m.name+' <span style="color:var(--muted);font-size:12px;">'+m.id+'</span></div>').join('');el.classList.toggle('show',r.length>0);}
+function selectIssMember(id){issMember=MEMBERS.find(m=>m.id===id);document.getElementById('iss-ms').value=issMember?issMember.name+' ('+issMember.id+')':'';document.getElementById('iss-ms-results').classList.remove('show');updateIssPreview();}
+function issSearchBook(v){const el=document.getElementById('iss-bs-results');if(!v){el.classList.remove('show');return;}const r=BOOKS.filter(b=>(b.available||0)>0&&(b.title.toLowerCase().includes(v.toLowerCase())||b.author.toLowerCase().includes(v.toLowerCase())));el.innerHTML=r.slice(0,5).map(b=>'<div class="sr-item" onclick="selectIssBook(\''+b.id+'\')">'+b.title+' <span style="color:var(--muted);font-size:12px;">'+b.author+' ('+b.available+')</span></div>').join('');el.classList.toggle('show',r.length>0);}
+function selectIssBook(id){const b=BOOKS.find(x=>x.id===id);if(b&&!issBooks.find(x=>x.id===id)&&issBooks.length<3){issBooks.push(b);document.getElementById('iss-bs').value='';}document.getElementById('iss-bs-results').classList.remove('show');renderIssBooks();updateIssPreview();}
+function removeIssBook(id){issBooks=issBooks.filter(b=>b.id!==id);renderIssBooks();updateIssPreview();}
+function renderIssBooks(){document.getElementById('iss-selected-books').innerHTML=issBooks.map(b=>'<div class="book-tag">&#x1F4D6; '+esc(b.title)+'<span class="remove" onclick="removeIssBook(\''+b.id+'\')">&#x2715;</span></div>').join('');document.getElementById('iss-bcnt').textContent='('+issBooks.length+'/3)';}
+function updateIssPreview(){const e=document.getElementById('iss-preview-empty'),c=document.getElementById('iss-preview-content');if(!issMember||!issBooks.length){e.style.display='';c.style.display='none';return;}e.style.display='none';c.style.display='';c.innerHTML='<div class="member-prev-card"><div class="av">'+issMember.name[0]+'</div><div><div class="fw7 fs13">'+esc(issMember.name)+'</div><div class="fs12 text-muted">'+issMember.id+'</div></div></div>'+issBooks.map(b=>'<div class="book-prev-row"><div class="book-mini-cover"></div><div><div class="fw7 fs12">'+esc(b.title)+'</div><div class="fs12 text-muted">'+esc(b.author)+'</div></div></div>').join('');}
+function resetIss(){issMember=null;issBooks=[];document.getElementById('iss-ms').value='';document.getElementById('iss-bs').value='';renderIssBooks();updateIssPreview();}
+async function confirmIssue(){
+  if(!issMember||!issBooks.length){toast('Select member and books');return;}
+  const idate=document.getElementById('iss-idate').value||new Date().toISOString().split('T')[0];
+  const ddate=document.getElementById('iss-ddate').value||idate;
+  const btn=document.getElementById('btn-issue');btn.disabled=true;btn.textContent='Issuing...';
+  try{await api('/api/issue','POST',{book_ids:issBooks.map(b=>b.id).join(','),member_id:issMember.id,issue_date:idate,due_date:ddate});toast('Books issued!');resetIss();await initApp();}
+  catch(e){toast('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='Confirm Issue';
+}
+
+function retSearchMember(v){const el=document.getElementById('ret-ms-results');if(!v){el.classList.remove('show');return;}const r=MEMBERS.filter(m=>m.name.toLowerCase().includes(v.toLowerCase())||m.id.toLowerCase().includes(v.toLowerCase()));el.innerHTML=r.slice(0,5).map(m=>'<div class="sr-item" onclick="selectRetMember(\''+m.id+'\')">'+m.name+' <span style="color:var(--muted);font-size:12px;">'+m.id+'</span></div>').join('');el.classList.toggle('show',r.length>0);}
+async function selectRetMember(id){
+  retMember=MEMBERS.find(x=>x.id===id);retSelectedIds=[];
+  document.getElementById('ret-ms').value=retMember?retMember.name+' ('+retMember.id+')':'';
+  document.getElementById('ret-ms-results').classList.remove('show');
+  try{retIssuedBooks=await api('/api/issued?member_id='+encodeURIComponent(id));}catch(e){retIssuedBooks=[];}
+  const el=document.getElementById('ret-issued-books');
+  if(!retIssuedBooks.length){el.innerHTML='<p class="text-muted fs12">No issued books found for this member.</p>';updateRetPreview();return;}
+  el.innerHTML=retIssuedBooks.map(i=>'<div class="checkbox-wrap"><input type="checkbox" value="'+i.issue_id+'" onchange="toggleRetBook('+i.issue_id+')"><span class="fs13">'+esc(i.book_title)+' <span class="text-muted">(Due: '+i.due_date+')</span></span></div>').join('');
+  updateRetPreview();
+}
+function toggleRetBook(id){if(retSelectedIds.includes(id))retSelectedIds=retSelectedIds.filter(x=>x!==id);else retSelectedIds.push(id);updateRetPreview();}
+function updateRetPreview(){const e=document.getElementById('ret-preview-empty'),c=document.getElementById('ret-preview-content');if(!retSelectedIds.length){e.style.display='';c.style.display='none';return;}e.style.display='none';c.style.display='';const sel=retIssuedBooks.filter(i=>retSelectedIds.includes(i.issue_id));c.innerHTML=sel.map(i=>'<div class="book-prev-row"><div class="book-mini-cover"></div><div><div class="fw7 fs12">'+esc(i.book_title)+'</div><div class="fs12 text-muted">Due: '+i.due_date+'</div></div></div>').join('');}
+function resetRet(){retMember=null;retIssuedBooks=[];retSelectedIds=[];document.getElementById('ret-ms').value='';document.getElementById('ret-issued-books').innerHTML='';updateRetPreview();}
+async function confirmReturn(){
+  if(!retMember||!retSelectedIds.length){toast('Select member and books to return');return;}
+  const rdate=document.getElementById('ret-rdate').value||new Date().toISOString().split('T')[0];
+  const btn=document.getElementById('btn-return');btn.disabled=true;btn.textContent='Returning...';
+  try{await api('/api/return','POST',{issue_ids:retSelectedIds.join(','),return_date:rdate});toast('Books returned!');resetRet();await initApp();}
+  catch(e){toast('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='Confirm Return';
+}
+
+function renderIssuedList(){document.getElementById('issued-table-body').innerHTML=ISSUES.length?ISSUES.map(i=>'<tr><td>'+i.issue_id+'</td><td class="fw7">'+esc(i.book_title)+'</td><td>'+esc(i.member_name)+'</td><td class="fs12">'+i.issue_date+'</td><td class="fs12">'+i.due_date+'</td><td><span class="badge badge-blue">'+i.status+'</span></td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">No issued books.</td></tr>';}
+function renderReturnedList(){document.getElementById('returned-table-body').innerHTML=RETURNS.length?RETURNS.map(r=>'<tr><td>'+r.return_id+'</td><td class="fw7">'+esc(r.book_title)+'</td><td>'+esc(r.member_name)+'</td><td class="fs12">'+r.return_date+'</td><td><span class="badge '+(r.days_overdue>0?'badge-red':'badge-green')+'">'+r.days_overdue+'</span></td><td class="'+(r.fine_amount>0?'text-red':'')+'">'+(r.fine_amount>0?'LKR '+r.fine_amount.toFixed(2):'—')+'</td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">No returns yet.</td></tr>';}
+function renderOverdueList(){document.getElementById('overdue-table-body').innerHTML=OVERDUE_LIST.length?OVERDUE_LIST.map(o=>'<tr><td>'+o.issue_id+'</td><td class="fw7">'+esc(o.book_title)+'</td><td>'+esc(o.member_name)+'</td><td class="fs12">'+o.due_date+'</td><td><span class="badge badge-red">'+o.days_overdue+' days</span></td><td class="text-red fw7">LKR '+parseFloat(o.fine).toFixed(2)+'</td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">No overdue books!</td></tr>';}
+function renderFinesList(){document.getElementById('fines-table-body').innerHTML=FINES_LIST.length?FINES_LIST.map(f=>'<tr><td>'+f.fine_id+'</td><td>'+esc(f.member_name)+'</td><td>'+esc(f.book_title)+'</td><td class="fw7">LKR '+parseFloat(f.amount).toFixed(2)+'</td><td><span class="badge '+(f.status==='Paid'?'badge-green':'badge-red')+'">'+f.status+'</span></td><td>'+(f.status==='Unpaid'?'<button class="btn btn-success btn-sm" onclick="payFine('+f.fine_id+',\''+f.member_id+'\')">Pay</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">No fines.</td></tr>';}
+async function payFine(fineId, memberId){
+  try{await api('/api/fines/pay','POST',{fine_id:fineId,paid_date:new Date().toISOString().split('T')[0],member_id:memberId});toast('Fine paid!');await initApp();}
+  catch(e){toast('Error: '+e.message);}
+}
+
+const TITLES={dashboard:'Dashboard','books-all':'All Books','books-add':'Add New Book','members-all':'All Members','members-add':'Register Member',categories:'Categories',issue:'Issue Book(s)',return:'Return Book(s)','issued-list':'Issued Books','returned-list':'Returned Books',overdue:'Overdue Books',fines:'Fines & Payments'};
+function nav(page,el){
+  if(page==='books-add'&&!_editingBookId){document.getElementById('add-book-title').textContent='Add New Book';document.getElementById('add-id').readOnly=false;['add-id','add-title','add-author','add-isbn','add-cat','add-qty'].forEach(x=>document.getElementById(x).value='');}
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{const t=document.querySelector('.ni[data-page="'+page+'"]');if(t)t.classList.add('active');}
+  document.getElementById('tb-title').textContent=TITLES[page]||'Library';
+  closeSB();closeAllPanels();renderPage(page);document.querySelector('.content').scrollTop=0;
+}
+function renderPage(p){
+  updateDashStats();
+  if(p==='books-all'){booksPage=1;renderBooksTable();}
+  if(p==='members-all'){membersPage=1;renderMembersTable();}
+  if(p==='categories')renderCats();
+  if(p==='issued-list')renderIssuedList();
+  if(p==='returned-list')renderReturnedList();
+  if(p==='overdue')renderOverdueList();
+  if(p==='fines')renderFinesList();
+  if(p==='issue'||p==='return'){document.getElementById('iss-idate').value=new Date().toISOString().split('T')[0];const d=new Date();d.setDate(d.getDate()+30);document.getElementById('iss-ddate').value=d.toISOString().split('T')[0];document.getElementById('ret-rdate').value=new Date().toISOString().split('T')[0];}
+}
+
+const sbEl=document.getElementById('sb'),ovEl=document.getElementById('ov');
+function handleSBClick(e){if(!sbEl.classList.contains('open')){openSB();e.stopPropagation();}}
+function openSB(){sbEl.classList.add('open');ovEl.classList.add('show');}
+function closeSB(){sbEl.classList.remove('open');ovEl.classList.remove('show');}
+function toggleSub(id,el){if(!sbEl.classList.contains('open')){openSB();setTimeout(()=>_toggleSub(id,el),50);return;}_toggleSub(id,el);}
+function _toggleSub(id,el){const sub=document.getElementById(id);sub.classList.toggle('open');const arr=el.querySelector('.ni-arr');if(arr)arr.classList.toggle('open',sub.classList.contains('open'));}
+let activePanel=null;
+function togglePanel(n){if(activePanel===n){closeAllPanels();return;}closeAllPanels();document.getElementById('panel-'+n).classList.add('show');document.getElementById('btn-'+n).classList.add('active-panel');activePanel=n;}
+function closeAllPanels(){['notif','msg','admin'].forEach(n=>{const p=document.getElementById('panel-'+n),b=document.getElementById('btn-'+n);if(p)p.classList.remove('show');if(b)b.classList.remove('active-panel');});activePanel=null;}
+document.addEventListener('click',function(e){if(!e.target.closest('.tb-dropdown')&&!e.target.closest('#btn-notif')&&!e.target.closest('#btn-msg')&&!e.target.closest('#btn-admin')&&!e.target.closest('.uc'))closeAllPanels();if(!e.target.closest('#sb')&&sbEl.classList.contains('open'))closeSB();});
+let notifCount=6;
+function markRead(el){if(el.classList.contains('unread')){el.classList.remove('unread');notifCount=Math.max(0,notifCount-1);const b=document.getElementById('notif-badge');if(!notifCount)b.style.display='none';else b.textContent=notifCount;}}
+function markAllRead(){document.querySelectorAll('.notif-item.unread').forEach(el=>el.classList.remove('unread'));notifCount=0;document.getElementById('notif-badge').style.display='none';}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+let toastTimer;function toast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);}
+function esc(s){if(s==null)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+function setDashDate(){const n=new Date(),dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];document.getElementById('dash-date').textContent=n.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}).toUpperCase()+' | '+dn[n.getDay()]+', '+n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+
+function handleLogout(){
+  closeAllPanels();
+  toast('Logging out...');
+  setTimeout(function(){
+    window.location.href = 'login.html';
+  }, 800);
+}
+
+document.getElementById('m-add-start').value=new Date().toISOString().split('T')[0];
+const ed=new Date();ed.setFullYear(ed.getFullYear()+1);document.getElementById('m-add-expiry').value=ed.toISOString().split('T')[0];
+document.getElementById('m-add-id').value='LIB'+String(Math.floor(Math.random()*90000)+10000);
+initApp();
+setInterval(()=>{if(!isServerOnline)initApp();},15000);
+</script>
+</body>
+</html>
